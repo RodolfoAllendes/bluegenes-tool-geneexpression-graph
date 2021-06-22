@@ -2,7 +2,7 @@
 const GeneExpressionGraph = require('./GeneExpressionGraph.mjs');
 
 // make sure to export main, with the signature
-export function main(el, service, imEntity, state, config) {
+function main(el, service, imEntity, state, config) {
 	if (!state) state = {};
 	if (!el || !service || !imEntity || !state || !config) {
 		throw new Error('Call main with correct signature');
@@ -54,4 +54,4 @@ export function main(el, service, imEntity, state, config) {
 	
 }
 
-// export = { main as main};
+module.export = { main };
