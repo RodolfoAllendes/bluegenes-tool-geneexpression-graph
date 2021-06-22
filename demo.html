@@ -12,14 +12,13 @@
   <!-- You can assume imjs is on the window.  -->
   <script src="node_modules/imjs/dist/im.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-
-  
+	<script src="https://d3js.org/d3.v6.min.js"></script>
 
   <!-- These are the styles YOU implement in src/style.less -->
   <link rel="stylesheet" href="dist/style.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
 	<script>
-		var socket = io("http://localhost:3457");
+		var socket = io("http://10.100.60.138:3457");
     socket.on('reload', function(){
 			document.location.reload();
     });
@@ -31,7 +30,7 @@
   <script>
     window.onload = function() {
     	// InterMine service, including URL and optionally token.
-      var imService = { root: 'https://www.humanmine.org/humanmine' };
+      var imService = { root: 'http://10.100.60.138:8080/targetmine' };
 	    // The element to attach the viewer to. Must be an existing DOM element.
     	var elem = document.getElementById('yourDiv'),
         // We use imjs to acquire the example data for initializing the tool,
@@ -59,10 +58,10 @@
           var obj = response[0];
           // This represents an example of what would be passed to this tool.
           var dataForTool = {
-            [obj.class]: {
-              class: obj.class,
+            Gene: {
+              class: 'Gene',
               format: 'id',
-              value: obj.objectId
+              value: 3254295
             }
           };
 

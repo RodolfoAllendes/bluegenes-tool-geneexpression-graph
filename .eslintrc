@@ -7,22 +7,19 @@
     "jest": true
 	},
 	"extends": [
-    "eslint:recommended",
-    "prettier"
+    "eslint:recommended"
   ],
   "plugins": [
-    "import",
-    "prettier"
+    "import"
   ],
   "parserOptions": {
     "sourceType": "module"
   },
 	"rules": {
-    "indent": ["error", "tab"],
+    "indent": ["error", "tab", {"MemberExpression": "off"}],
 		"linebreak-style": ["error", "unix"],
 		"quotes": ["error", "single"],
 		"semi": ["error", "always"],
-    "prettier/prettier": "error",
     "comma-dangle": ["error", "never"]
   },
   "settings": {
