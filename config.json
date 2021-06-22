@@ -1,0 +1,13 @@
+{
+  "accepts": ["id"],
+  "classes": ["Gene"],
+  "files" : {
+    "css" : "dist/style.css",
+    "js" : "dist/bundle.js"
+  },
+  "toolName" : {
+    "human" :"Gene Expression Graph",
+    "cljs" :"bluegenesToolGeneExpressionGraph"    
+  },
+  "version": 2
+}
