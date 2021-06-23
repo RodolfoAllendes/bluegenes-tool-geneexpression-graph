@@ -54,4 +54,4 @@ function main(el, service, imEntity, state, config) {
 	
 }
 
-module.export = { main };
+module.export = main;
