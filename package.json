@@ -28,8 +28,8 @@
     }
   },
 	"jest": {
-		"transformIgnorePatterns": ["<rootDir>/node_modules/"]
-  	
+		"transformIgnorePatterns": ["<rootDir>/node_modules/"],
+		"transform": {"^.+\\.js$": "babel-jest"	}
 	},
   "lint-staged": {
     "*.js": [
