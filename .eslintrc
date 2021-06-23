@@ -6,6 +6,7 @@
     "node": true,
     "jest": true
 	},
+	"parser": "babel-eslint",
 	"extends": [
     "eslint:recommended"
   ],
@@ -13,7 +14,8 @@
     "import"
   ],
   "parserOptions": {
-    "sourceType": "module"
+    "sourceType": "module",
+		"ecmaVersion": 2018
   },
 	"rules": {
     "indent": ["error", "tab", {"MemberExpression": "off"}],

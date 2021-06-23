@@ -1,5 +1,5 @@
 'use strict';
-const GeneExpressionGraph = require('./GeneExpressionGraph.mjs');
+const GeneExpressionGraph = require('./GeneExpressionGraph.js');
 
 // make sure to export main, with the signature
 function main(el, service, imEntity, state, config) {
