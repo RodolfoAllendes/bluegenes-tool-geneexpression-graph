@@ -1,5 +1,5 @@
 'use strict';
-const GeneExpressionGraph = require('./GeneExpressionGraph.js');
+import { GeneExpressionGraph } from './GeneExpressionGraph.js';
 
 // make sure to export main, with the signature
 function main(el, service, imEntity, state, config) {
@@ -43,12 +43,32 @@ function main(el, service, imEntity, state, config) {
 		]);
 		return tmService.records(query); 
 	}).then(rows => {
-		window.GeneExpressionGraph = new GeneExpressionGraph(rows);
+		window.GeneExpressionGraph = new GeneExpressionGraph(rows[0]);
 	});
 	// create the top-level container for the graph
 	el.innerHTML = `
 		<div class="rootContainer">
-			<h1>Your Data Viz Here</h1>
+			<div id="geneExpressionGraph-div" class="targetmineGraphDisplayer" >
+				<svg id="canvas_geneExpression" class="targetmineGraphSVG">
+					<g id="graph"></g>
+				</svg>
+				<div id="rightColumn_bioActivity" className="rightColumn">
+					<div id="visuals-div" className="flex-table">
+						<label>Other Visuals</label>
+						<div id="visuals-table">
+							<div id="visuals-violin" className="flex-row">
+								<input type="checkbox" id="cb-violin"></input>
+								<label className="row-label">Violin plot</label>
+							</div>
+							<div id="visuals-jitter" className="flex-row">
+								<input type="checkbox" id="cb-jitter"></input>
+								<label className="row-label">Jitter</label>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div id="modal_bioActivity" className="targetmineGraphModal"></div>
+			</div>
 		</div>
 	`;
 	

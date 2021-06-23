@@ -3,61 +3,57 @@
  * Violin and jitter display based on the code from:
  * https://www.d3-graph-gallery.com/graph/violin_jitter.html
  */
-// import * as d3 from 'd3';
+import * as d3 from 'd3';
 
 /**
  * @class GeneExpressionGraph
  * @classdesc Used to display a Gene Expression level graph in the report page
  * of genes
  * @author Rodolfo Allendes
- * @version 0.1
+ * @version 1.0
  */
 export class GeneExpressionGraph{
-
 	/**
-	 * Initialize a new instance of GeneExpressionGraph
-	 *
-	 * @param {string} name The title for the graph
-	 * @param {data} data The Java ArrayList string representation of the data
-	 * retrieved from the database for the construction of the graph
-	 * @param {string} containerId The id of the container to place the visualization
-	 * @param {int} width The width of the viewBox in the svg element
-	 * @param {int} height The height of the viewBox in the svg element
+	 * Constructor
+	 * @param {object} geneObj The object with the data to be displayed
 	 */
-	constructor(){ //name, data, containerId, width, height){
-		/* initialize super-class attributes */
+	constructor(geneObj){
+		/* finish execution if no data available */
+		if( geneObj.probeSets.length === 0 ){
+			d3.select('#geneExpressionGraph-div')
+				.text('No Gene Expression Data to Display');
+			return;
+		}
 		this._type = 'geneExpressionGraph';
-		// super.setName(name);
-		// super.setContainerId(containerId);
-		// super.setWidth(width);
-		// super.setHeight(height);
+		this._name = geneObj.symbol;
+		/* width/height of canvas and margins for the graph */
+		this._width = 1000;
+		this._height = 400;
+		this._margin = {top: 40, right: 40, bottom: 40, left: 40};
 
-		// /* Title for each axis in the graph */
-		// this._x = undefined;
-		// this._y = 'value';
-		// /* Different levels of specificity at which we can look gene expression */
-		// this._levels = {
-		//   0: 'category',
-		//   1: 'organ',
-		//   2: 'name',
-		// };
-		// Object.freeze(this._levels);
+		/* Title for each axis in the graph */
+		this._y = 'value';
+		/* Different levels of specificity at which we can look gene expression */
+		this._levels = {
+			0: 'category',
+			1: 'organ',
+			2: 'name'
+		};
+		Object.freeze(this._levels);
 
-		// /* The display tree contains the information required for the correct display
-		// of data points along the X axis */
-		// this._displayTree = undefined;
-
-		// /* parse data to local storage */
+		/* The display tree contains the information required for the correct display
+		of data points along the X axis */
+		this._displayTree = this.initDisplayTree(geneObj.probeSets);
+		this._xLabels = [...this._displayTree.get('category').keys()];
+		this._xLevels =  Array(this._xLabels.length).fill(0);
+		
+		/* parse data to local storage */
 		// this.loadData(data);
-		// if( this._data.length === 0 ){
-		//   d3.select('#'+this._containerId).text('No Gene Expression Data to Display');
-		//   return;
-		// }
+		
 		// /* Initialize the tree structure of levels for the graph */
-		// this.initDisplayTree();
-		// /* Initialize the Axis of the graph */
-		// this.initXLabels();
-		// this.initXAxis();
+		
+		/* Initialize the Axis of the graph */
+		this._xAxis = this.initXAxis();
 		// this.initYAxis();
 		// /* Initialize data points position and color */
 		// this.setPointPositions();
@@ -70,8 +66,7 @@ export class GeneExpressionGraph{
 
 		// this.updateVisualsTable();
 
-		// this.plot();
-
+		this.plot();
 	}
 
 	// /**
@@ -104,72 +99,70 @@ export class GeneExpressionGraph{
 	//   return false;
 	// }
 
-	// /**
-	//  * Initialize a tree of the whole structure of the graph.
-	//  * In order to handle the transitions between different levels within the tree
-	//  * being displayed, a whole tree is build on load.
-	//  */
-	// initDisplayTree(){
-	//   this._displayTree = {
-	//     0: {},
-	//     1: {},
-	//     2: {},
-	//   };
-	//   /* traversing of the data once is required to build all the links between
-	//     the different elements within the tree */
-	//   this._data.forEach( (item,i) => {
-	//     let category = item.category;
-	//     let organ = item.organ;
-	//     let name = item.name;
+	/**
+	 * Initialize a tree of the whole structure of the graph.
+	 * In order to handle the transitions between different levels within the tree
+	 * being displayed, a whole tree is build on load.
+	 */
+	initDisplayTree(probeSets){
+		let category = new Map();
+		let organ = new Map();
+		let name = new Map();
+		probeSets.forEach(ps => {
+			ps.expressions.forEach(exp => {
+				let categoryDisplay = exp.tissue.category.replace(/[-_/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' ');
+				let categoryId = categoryDisplay[0].toLowerCase();
+				let organDisplay = exp.tissue.organ.replace(/[-_/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' ');
+				let organId = organDisplay[0].toLowerCase();
+				let nameDisplay = exp.tissue.name.replace(/[-_/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' ');
+				let nameId = nameDisplay[0].toLowerCase();
+				// if a node at the category level is not yet included, we can add it
+				// together with the first of his childrend and grand-children
+				if (!category.has(categoryId)){
+					category.set(categoryId, { parent: undefined, children: [organId], display: categoryDisplay	});
+					organ.set(organId, { parent: categoryId,	children: [nameId], display: organDisplay	});
+					name.set(nameId, { parent: organId,	children: undefined, display: nameDisplay	});
+				}
+				// when only the node at the organ level has not been added, the parent is
+				// already part of the tree, so we only need to update its children and
+				// include the new member, together with its first child
+				else if (!organ.has(organId)) {
+					category.get(categoryId).children.push(organId);
+					organ.set(organId, { parent: categoryId,	children: [nameId], display: organDisplay	});
+					name.set(nameId, { parent: organId, children: undefined, display: nameDisplay });
+				}
+				// when a node at the name level has not been added to the tree, we
+				// only need to update its parent's list of children and add it to the tree
+				else if (!name.has(nameId)) {
+					organ.get(organId).children.push(nameId);
+					name.set(nameId, { parent: organId, children: undefined, display: nameDisplay	});
+				}
+			});
+		});
 
-	//     // if a node at the category level is not yet included, we can add it
-	//     // together with the first of his childrend and grand-children
-	//     if( !this._displayTree[0].hasOwnProperty(category) ){
-	//       this._displayTree[0][category] = {
-	//         parent: undefined,
-	//         children: [organ],
-	//         display: category.replace(/[-_\/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' '),
-	//       };
-	//       this._displayTree[1][organ] = {
-	//         parent: category,
-	//         children: [name],
-	//         display: organ.replace(/[-_\/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' '),
-	//        };
-	//       this._displayTree[2][name] = {
-	//         parent: organ,
-	//         children: undefined,
-	//         display: name.replace(/[-_\/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' '),
-	//       };
-	//     }
-	//     // when only the node at the organ level has not been added, the parent is
-	//     // already part of the tree, so we only need to update its children and
-	//     // include the new member, together with its first child
-	//     else if( !this._displayTree[1].hasOwnProperty(organ) ) {
-	//       this._displayTree[0][category].children.push(organ);
-	//       this._displayTree[1][organ] = {
-	//         parent: category,
-	//         children: [name],
-	//         display: organ.replace(/[-_\/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' '),
-	//       };
-	//       this._displayTree[2][name] = {
-	//         parent: organ,
-	//         children: undefined,
-	//         display: name.replace(/[-_\/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' '),
-	//       };
-	//     }
-	//     // when a node at the name level has not been added to the tree, we
-	//     // only need to update its parent's list of children and add it to the tree
-	//     else if ( !this._displayTree[2].hasOwnProperty(name) ) {
-	//       this._displayTree[1][organ].children.push(name);
-	//       this._displayTree[2][name] = {
-	//         parent: organ,
-	//         children: undefined,
-	//         display: name.replace(/[-_\/]/g,' ').replace(/(?:^|\s)+\S/g, match => match.toUpperCase()).split(' '),
-	//       };
-	//     }
-	//   },this);
-	// }
+		return new Map([
+			['category', category],
+			['organ', organ],
+			['name', name]
+		]);
+	}
 
+	/**
+	 * Initialize the X axis of the graph
+	 */
+	initXAxis(){
+		/* The bottom axis will map to a series of discrete pixel values, evenly
+		 * distributed along the drawing area, for this, we use the scaleBand scale
+		 * provided by D3 */
+		let scale = d3.scaleBand()
+			.domain(this._xLabels)
+			.range( [0, this._width-this._margin.left-this._margin.right] )
+			.padding(0.05)
+		;
+		/* create the corresponding axis */
+		return d3.axisBottom(scale);
+	}
+	
 	// /**
 	//  * Initialize DOM elements
 	//  */
@@ -248,21 +241,7 @@ export class GeneExpressionGraph{
 	//   );
 	// }
 
-	// /**
-	//  * Initialize the labels of the X axis of the Graph.
-	//  * As the _displayTree contains a list of all the different labels across the
-	//  * different levels of the structure, we can simply copy that information as
-	//  * the initial labels for the graph.
-	//  * We also initialize the list of levels associated to each label.
-	//  */
-	// initXLabels(){
-	//   /* copy labels from the _displayTree */
-	//   this._xLabels = [];
-	//   this._xLabels.push(Object.keys(this._displayTree[0]));
-	//   this._xLabels = this._xLabels.flat();
-	//   /* and initialize the level of each of the labels */
-	//   this._xLevels = Array(this._xLabels.length).fill(0);
-	// }
+
 
 	// /**
 	// *
@@ -297,143 +276,188 @@ export class GeneExpressionGraph{
 	//   });
 	// }
 
-	// /**
-	//  * Set the position (in display coordinates) of each point in the data
-	//  *
-	//  * @param {boolean} jitter Should the position of the point be randomly
-	//  * jittered along the X axis or not.
-	//  */
-	// setPointPositions(jitter=false){
-	//   let self = this;
-	//   let X = this._xAxis.scale();
-	//   let dx = X.bandwidth()/2;
-	//   let Y = this._yAxis.scale();
+	/**
+	 * Set the position (in display coordinates) of each point in the data
+	 *
+	 * @param {boolean} jitter Should the position of the point be randomly
+	 * jittered along the X axis or not.
+	 */
+	setPointPositions(jitter=false){
+		let self = this;
+		let X = this._xAxis.scale();
+		let dx = X.bandwidth()/2;
+		let Y = this._yAxis.scale();
 
-	//   this._xLabels.forEach((item,i)=>{
-	//     let key = self._levels[self._xLevels[i]]; //one of [category, organ, name]
-	//     self._data.forEach(d=>{
-	//       if( d[key] === self._xLabels[i] ){
-	//         d.x = X(d[key])+dx;
-	//         if( jitter ) d.x -= (dx/2)*Math.random();
-	//         d.y = Y(d[this._y]);
-	//       }
-	//     });
-	//   });
-	// }
+		this._xLabels.forEach((item,i)=>{
+			let key = self._levels[self._xLevels[i]]; //one of [category, organ, name]
+			self._data.forEach(d=>{
+				if( d[key] === self._xLabels[i] ){
+					d.x = X(d[key])+dx;
+					if( jitter ) d.x -= (dx/2)*Math.random();
+					d.y = Y(d[this._y]);
+				}
+			});
+		});
+	}
 
 
-	// /**
-	//  * Collapse the labels associated to the X axis
-	//  *
-	//  * @param {string} target the label of the x Axis tick we are trying to collapse
-	//  * into is parent category.
-	//  * @return {boolean} whether the collapsing took place or not
-	//  */
-	// collapseXLabels(target){
+	/**
+	 * Collapse the labels associated to the X axis
+	 *
+	 * @param {string} target the label of the x Axis tick we are trying to collapse
+	 * into is parent category.
+	 * @return {boolean} whether the collapsing took place or not
+	 */
+	collapseXLabels(target){
 
-	//   let i = this._xLabels.indexOf(target);
-	//   let lvl = this._xLevels[i];
+		let i = this._xLabels.indexOf(target);
+		let lvl = this._xLevels[i];
 
-	//   /* we can only collapse levels that are above the root level */
-	//   if( lvl >= 1 ){
-	//     /* we will reconstruct the label and level arrays, including only the
-	//      elements on different branches of the display tree than the target, and
-	//      the parent element for the target */
-	//     let newLabels = [];
-	//     let newLevels = [];
+		/* we can only collapse levels that are above the root level */
+		if( lvl >= 1 ){
+			/* we will reconstruct the label and level arrays, including only the
+			 elements on different branches of the display tree than the target, and
+			 the parent element for the target */
+			let newLabels = [];
+			let newLevels = [];
 
-	//     this._xLabels.forEach( (item, j) => {
-	//       // if the current element is the target, then we add its parent element
-	//       // to the new labels
-	//       if( item === target ){
-	//         newLabels.push(this._displayTree[lvl][item].parent);
-	//         newLevels.push(lvl-1);
-	//       }
-	//       // if the current element is on a different branch of the tree, we simply
-	//       // copy it to the new elements
-	//       else if( !this.belongToSameBranch(item, target, this._xLevels[j] ,lvl) ){
-	//         newLabels.push(item);
-	//         newLevels.push(this._xLevels[j]);
-	//       }
-	//       /* else, we do nothing, as it means the element is part of the branch
-	//        to be replaced by the parent of the target element */
-	//     },this);
+			this._xLabels.forEach( (item, j) => {
+				// if the current element is the target, then we add its parent element
+				// to the new labels
+				if( item === target ){
+					newLabels.push(this._displayTree[lvl][item].parent);
+					newLevels.push(lvl-1);
+				}
+				// if the current element is on a different branch of the tree, we simply
+				// copy it to the new elements
+				else if( !this.belongToSameBranch(item, target, this._xLevels[j] ,lvl) ){
+					newLabels.push(item);
+					newLevels.push(this._xLevels[j]);
+				}
+				/* else, we do nothing, as it means the element is part of the branch
+				 to be replaced by the parent of the target element */
+			},this);
 
-	//     // Once we have completed the definition of the label and level arrays, we
-	//     // simply copy them and recreate the axis and plot
-	//     this._xLabels = newLabels;
-	//     this._xLevels = newLevels;
-	//     this.initXAxis();
-	//     this.setPointPositions(d3.select('#cb-jitter').property('checked'));
-	//     this.initHistogramBins();
-	//     this.plot();
-	//     return true;
-	//   }
-	//   else{
-	//     console.log('Not possible to collapse this level');
-	//     return false;
-	//   }
-	// }
+			// Once we have completed the definition of the label and level arrays, we
+			// simply copy them and recreate the axis and plot
+			this._xLabels = newLabels;
+			this._xLevels = newLevels;
+			this.initXAxis();
+			this.setPointPositions(d3.select('#cb-jitter').property('checked'));
+			this.initHistogramBins();
+			this.plot();
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
 
-	// /**
-	//  * Expand the labels associated to the X axis
-	//  *
-	//  * @param {string} target the label on the X axis that the user clicked, so
-	//  * to expand into its components
-	//  * @return a boolean value indicating if the expansion was carried out or not
-	//  */
-	// expandXLabels(target){
-	//   let i = this._xLabels.indexOf(target);
-	//   let lvl = this._xLevels[i];
-	//   if( lvl < 2 ){
-	//     let newLabels = this._displayTree[lvl][target].children;
-	//     let newLevels = Array(newLabels.length).fill(lvl+1);
+	/**
+	 * Expand the labels associated to the X axis
+	 *
+	 * @param {string} target the label on the X axis that the user clicked, so
+	 * to expand into its components
+	 * @return a boolean value indicating if the expansion was carried out or not
+	 */
+	expandXLabels(target){
+		let i = this._xLabels.indexOf(target);
+		let lvl = this._xLevels[i];
+		if( lvl < 2 ){
+			let newLabels = this._displayTree[lvl][target].children;
+			let newLevels = Array(newLabels.length).fill(lvl+1);
 
-	//     this._xLabels.splice(i, 1, newLabels);
-	//     this._xLabels = this._xLabels.flat();
+			this._xLabels.splice(i, 1, newLabels);
+			this._xLabels = this._xLabels.flat();
 
-	//     this._xLevels.splice(i, 1, newLevels);
-	//     this._xLevels = this._xLevels.flat();
+			this._xLevels.splice(i, 1, newLevels);
+			this._xLevels = this._xLevels.flat();
 
-	//     /* redefine the x Axis with the new list of labels */
-	//     this.initXAxis();
-	//     this.setPointPositions(d3.select('#cb-jitter').property('checked'));
-	//     this.initHistogramBins();
-	//     /* re-plot the graph */
-	//     this.plot();
-	//     return true;
-	//   }
-	//   console.log('Not possible to expand this level');
-	//   return false;
-	// }
+			/* redefine the x Axis with the new list of labels */
+			this.initXAxis();
+			this.setPointPositions(d3.select('#cb-jitter').property('checked'));
+			this.initHistogramBins();
+			/* re-plot the graph */
+			this.plot();
+			return true;
+		}
+		return false;
+	}
 
-	// /**
-	//  * Plot the X Axis of a Gene Expression Graph
-	//  * An expression graph has the property that the labels using for the X axis
-	//  * can be expanded or collapsed through three different levels of specificity.
-	//  */
-	// plotXAxis(){
-	// 	let self = this;
-	// 	super.plotXAxis();//angle);
 
-	// 	/* assign an id to all text used for ticks in the axis */
-	// 	d3.selectAll('g#bottom-axis > g.tick > text')
-	//     .attr('id', function(d){ return d; })
-	//   ;
 
-	// 	/* change the text aassociated to the ticks to something more pleasent */
-	// 	this._xLabels.forEach( (item,i) => {
-	// 		if( item !== undefined ){
-	// 			d3.select('text#'+item)
-	//       	.text('')
-	//       	.selectAll('tspan')
-	//         	.data(this._displayTree[this._xLevels[i]][item].display)
-	//         	.enter().append('tspan')
-	// 						.text(function(d){ return d; })
-	// 						.attr('dy', '1em')
-	// 						.attr('x', '0');
-	// 		}
-	// 	},this);
+	/**
+	 * Plot a Gene Expression Graph
+	 */
+	plot(){
+		/* Display the X and Y axis of the graph */
+		this.plotXAxis();
+		// this.plotYAxis();
+
+		// /* redraw the points, using the updated positions and colors */
+		// let canvas = d3.select('svg#canvas_geneExpression > g#graph');
+		// canvas.selectAll('#points').remove();
+		// canvas.append('g')
+		//   .attr('id', 'points')
+		//   .attr('transform', 'translate('+this._margin.left+',0)')
+		// ;
+
+		// /* for each data point, generate a group where we can add multiple svg
+		//  * elements */
+		// let pts = d3.select('#points').selectAll('g')
+		//   .data(this._data);
+		// pts.enter().append('circle')
+		//   .attr('cx', d => d.x)
+		//   .attr('cy', d => d.y)
+		//   .attr('r', '3')
+		//   .style('fill', d => d.color)
+		//   // let tooltip = point.append('svg:title')
+		//   .append('svg:title')
+		// 		.text( d => {
+		// 			return 'Category: '+d.category+
+		// 				'\nOrgan: '+d.organ+
+		// 				'\nName: '+d.name+
+		// 				'\nValue: '+d.value;
+		// 		})
+		// ;
+
+		// /* add violin plots if selected by the user */
+		// if( d3.select('#cb-violin').property('checked') )
+		// 	this.plotViolins();
+
+	}
+
+	/** 
+	 * Plot the X Axis
+	 */
+	plotXAxis(){
+		// remove previous axis components
+		d3.select('#bottom-axis').remove();
+
+		// add the axis to the display
+		d3.select('svg#canvas_geneExpression > g#graph')
+			.append('g')
+			.attr('id', 'bottom-axis')
+			.attr('transform', 'translate('+this._margin.left+', '+(this._height-this._margin.bottom)+')')
+			.call(this._xAxis);
+
+		// assign an id to all text used for ticks in the axis 
+		d3.selectAll('g#bottom-axis > g.tick > text')
+			.attr('id', function(d){ return d; })
+		;
+
+		// change the text for the display value associated to it 
+		this._xLabels.forEach((item,i) => {
+			d3.select('text#'+item)
+				.text('')
+				.selectAll('tspan')
+					.data(this._displayTree.get(this._levels[this._xLevels[i]]).get(item).display)
+						.enter().append('tspan')
+							.text(function(d){ return d; })
+							.attr('dy', '1em')
+							.attr('x', '0')
+						.exit().remove();
+		},this);
 
 	// 	/* assign click function to axis labels if required */
 	// 	d3.selectAll('g#bottom-axis > g.tick > text')
@@ -446,46 +470,6 @@ export class GeneExpressionGraph{
 	// 		})
 	// 	;
 	// }
-
-	// /**
-	//  * Plot a Gene Expression Graph
-	//  */
-	// plot(){
-	// 	/* Display the X and Y axis of the graph */
-	// 	this.plotXAxis();
-	// 	this.plotYAxis();
-
-	// 	/* redraw the points, using the updated positions and colors */
-	// 	let canvas = d3.select('svg#canvas_geneExpression > g#graph');
-	// 	canvas.selectAll('#points').remove();
-	// 	canvas.append('g')
-	//     .attr('id', 'points')
-	//     .attr('transform', 'translate('+this._margin.left+',0)')
-	// 	;
-
-	// 	/* for each data point, generate a group where we can add multiple svg
-	//    * elements */
-	// 	let pts = d3.select('#points').selectAll('g')
-	//     .data(this._data);
-	// 	pts.enter().append('circle')
-	//     .attr('cx', d => d.x)
-	//     .attr('cy', d => d.y)
-	//     .attr('r', '3')
-	//     .style('fill', d => d.color)
-	//     // let tooltip = point.append('svg:title')
-	//     .append('svg:title')
-	// 			.text( d => {
-	// 				return 'Category: '+d.category+
-	// 					'\nOrgan: '+d.organ+
-	// 					'\nName: '+d.name+
-	// 					'\nValue: '+d.value;
-	// 			})
-	// 	;
-
-	// 	/* add violin plots if selected by the user */
-	// 	if( d3.select('#cb-violin').property('checked') )
-	// 		this.plotViolins();
-
-	// }
+	}
 
 }

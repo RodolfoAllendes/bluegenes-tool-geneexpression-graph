@@ -1,28 +1,6 @@
-// 'use strict';
-
-// /**
-//  * @class TargetMineGraph
-//  * @classdesc Generic description of graph elements required to display a graph
-//  * as part of a report page in TargetMine
-//  * @author Rodolfo Allendes
-//  * @version 0.1
-//  */
-// export class TargetMineGraph {
-
-//   /**
-//    * Initialize a new instance of TargetMineGraph
-//    * This is a general container for any graph definition added to TargetMine
-//    * that uses a displayer, thus, only information such as the type of graph and 
-//    * general aspects as the size of it should be stored
-//    *
-//    * @param {string} type The type of graph being displayed
-//    */
 //   constructor(type){
-//     /* the type of graph */
-//     this._type = type;
-//     /* the title of the graph */
-//     this._name = undefined;
-//     /* the id for the base container of the DOM elements used in the visualization */
+    
+// 		/* the id for the base container of the DOM elements used in the visualization */
 //     this._containerId = undefined;
 
 //     /* the dimensions of the canvas are defined in user coordinates and NOT
@@ -32,9 +10,8 @@
     
 //     /* margins are defined as blank space, in user coordinates, destined to
 //      * contain extra annotations to the graph */
-//     this._margin = {top: 40, right: 40, bottom: 40, left: 40};
-//     // this._margin = undefined;
-
+    
+    
 //     /* data used for the generation of the graph */
 //     this._data = undefined;
 
@@ -45,10 +22,7 @@
 //     this._xAxis = undefined;
 //     this._yAxis = undefined;
 
-//     /* variables (titles) used for the axis in the label */
-//     this._x = undefined;
-//     this._y = undefined;
-
+    
 //     // the labels used in the x axis of the graph
 //     this._xLabels = undefined;
 //     this._yLabels = undefined;
@@ -56,14 +30,6 @@
 //     /* the list of colors and shapes used to display data points */
 //     this._colors = undefined;
 //     this._shapes = undefined;
-//   }
-
-//   /**
-//    * Set the name of the graph
-//    * @param {string} name The title for the graph
-//    */
-//   setName(name){
-//     this._name = name;
 //   }
 
 //   /**
@@ -163,23 +129,7 @@
 //     }, this);
 //   }
 
-//   /**
-//    * Initialize the X axis of the graph
-//    * The X axis will always be ordinal, so in order to generate the corresponding
-//    * list of ticks in the axis, we use the list of this._xLabels currently available.
-//    */
-//   initXAxis(){
-//     /* The bottom axis will map to a series of discrete pixel values, evenly
-//      * distributed along the drawing area, for this, we use the scaleBand scale
-//      * provided by D3 */
-//     let scale = d3.scaleBand()
-//       .domain(this._xLabels)
-//       .range( [0, this._width-this._margin.left-this._margin.right] )
-//       .padding(0.05)
-//     ;
-//     /* create the corresponding axis */
-//     this._xAxis = d3.axisBottom(scale);
-//   }
+
 
 //   /**
 //    * Initialize the Y axis of the graph
@@ -391,49 +341,7 @@
   
 //   }
 
-//   /**
-//    * Add the X axis to the graph
-//    *
-//    * @param {int} labelAngle If a value is given, the labels displayed for every
-//    * tick in the axis will be rotated clock-wise accordingly
-//    * @param {boolean} showTitle Display a title for the axis
-//    */
-//   plotXAxis(labelAngle=0, showTitle=false){
-//     /* remove previous axis components */
-//     let canvas = d3.select('svg#canvas_'+this._type+' > g#graph');
-//     canvas.selectAll('#bottom-axis').remove();
 
-//     /* add the axis to the display, making sure it is positioned only within the
-//      * area of the graph allocated for that */
-//     let g = canvas.append('g')
-//       .attr('id', 'bottom-axis')
-//       .attr('transform', 'translate('+this._margin.left+', '+(this._height-this._margin.bottom)+')')
-//       .call(this._xAxis)
-//     ;
-
-//     /* rotate the labels of the axis - if the rotation angle is != 0 */
-//     if( labelAngle != 0 ){
-//       let labels = g.selectAll('text')
-//         .attr("y", 0)
-//         .attr("x", 9)
-//         .attr("dy", ".35em")
-//         .attr("transform", "rotate("+labelAngle+")")
-//         .style("text-anchor", "start")
-//     }
-
-//     /* add title to the axis, if defined
-//      * The title is always positioned anchored to the mid-point of the bottom
-//      * margin */
-//     if( showTitle ){
-//       d3.selectAll('svg#canvas_'+this._type+' > text#bottom-axis-label').remove();
-//       let label = canvas.append('text')
-//         .attr('id', 'bottom-axis-label')
-//         .attr('transform', 'translate('+this._width/2+','+(this._height-this._margin.bottom/3)+')')
-//         .style('text-anchor', 'middle')
-//         .text(this._x)
-//       ;
-//     }
-//   }
 
 //   /**
 //    * Add DOM elements required for Y-axis display
@@ -461,4 +369,4 @@
 //       ;
 //     }
 //   }
-// }
+
