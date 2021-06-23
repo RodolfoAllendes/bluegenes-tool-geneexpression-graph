@@ -3,7 +3,8 @@
  * Violin and jitter display based on the code from:
  * https://www.d3-graph-gallery.com/graph/violin_jitter.html
  */
-import * as d3 from 'd3';
+// import * as d3 from 'd3';
+const d3 = require('d3');
 
 /**
  * @class GeneExpressionGraph
