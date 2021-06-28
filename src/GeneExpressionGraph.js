@@ -49,13 +49,14 @@ export class GeneExpressionGraph{
 		this._xLevels =  Array(this._xLabels.length).fill(0);
 		
 		/* parse data to local storage */
-		// this.loadData(data);
-		
-		// /* Initialize the tree structure of levels for the graph */
+		let {min, max, points} = this.processData(geneObj.probeSets);
+		this._min = min;
+		this._max = max;
+		this._points = points;
 		
 		/* Initialize the Axis of the graph */
 		this._xAxis = this.initXAxis();
-		// this.initYAxis();
+		this._yAxis = this.initYAxis();
 		// /* Initialize data points position and color */
 		// this.setPointPositions();
 		// this.initColorsAndShapes();
@@ -162,6 +163,59 @@ export class GeneExpressionGraph{
 		;
 		/* create the corresponding axis */
 		return d3.axisBottom(scale);
+	}
+
+	/**
+	 * Initialize the Y axis of the graph
+	 */
+	initYAxis(){
+		let scale = d3.scaleLinear().domain([0, this._max])
+			.range( [this._height-this._margin.bottom, this._margin.top] )
+			.nice();
+		/* create the corresponding axis */
+		return d3.axisLeft(scale);
+	}
+
+	/**
+ 	 * Load data for graph display
+	 * Data is provided by TargetMine in the form of an ArrayList. The first
+	 * element includes the names for the data columns, with the following n-1
+	 * elements of the array each representing a tab separated data point. Since
+	 * the ArrayList is converted to its String representation before being
+	 * transfered, items in the Array are separated by the character ','
+	 *
+	 * @param {string} data The Java ArrayList string representation of the data
+	 * retrieved from the database for the construction of the graph.
+	 */
+	processData(probeSets){
+		let points = [];
+		let min = +Infinity;
+		let max = -Infinity;
+		
+		probeSets.forEach(ps => {
+			let exp = ps.expressions.map(e => {
+				let robj = {
+					call: e.call,
+					value: e.value,
+					category: e.tissue.category,
+					organ: e.tissue.organ,
+					name: e.tissue.name
+				};
+				max = e.value > max ? e.value : max;
+				min = e.value < min ? e.value : min;
+				return 	robj;
+			});
+			points.push(exp);
+		});
+		
+		points = points.flat();
+		/* cleaning of the string provided triming of starting and end charachters
+		 * and replacement of ', ' for line separators */
+		// data = data.substring(1, data.length-1);
+		// data = data.replace(/, /g, '\n');
+		// /* local storage of the data */
+		// this._data = d3.tsvParse(data, d3.autoType);
+		return {min, max, points};
 	}
 	
 	// /**
@@ -393,7 +447,7 @@ export class GeneExpressionGraph{
 	plot(){
 		/* Display the X and Y axis of the graph */
 		this.plotXAxis();
-		// this.plotYAxis();
+		this.plotYAxis();
 
 		// /* redraw the points, using the updated positions and colors */
 		// let canvas = d3.select('svg#canvas_geneExpression > g#graph');
@@ -471,6 +525,35 @@ export class GeneExpressionGraph{
 	// 		})
 	// 	;
 	// }
+	}
+
+	/**
+   * Add DOM elements required for Y-axis display
+   */
+	plotYAxis(){
+		// remove previous components 
+		d3.select('#left-axis').remove();
+		
+		// add the axis to the display
+		d3.select('svg#canvas_geneExpression > g#graph')
+			.append('g')
+			.attr('id', 'left-axis')
+			.attr('transform', 'translate('+this._margin.left+',0)')
+			.call(this._yAxis);
+
+		// /* if defined, add a title to the axis */
+		// if( this._y !== undefined ){
+		// 	canvas.selectAll('text#left-axis-label').remove();
+		// 	let label = canvas.append('text')
+		// 		.attr('id', 'left-axis-label')
+		// 		.attr('transform', 'rotate(-90)')
+		// 		.attr('y', -this._margin.left/3)
+		// 		.attr('x', -this._height/2)
+		// 		.attr('dy', '1em')
+		// 		.style('text-anchor', 'middle')
+		// 		.text(this._y)
+		// 	;
+		// }
 	}
 
 }
