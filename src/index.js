@@ -50,7 +50,12 @@ function main(el, service, imEntity, state, config) {
 		<div class="rootContainer">
 			<div id="geneExpressionGraph-div" class="targetmineGraphDisplayer" >
 				<svg id="canvas_geneExpression" class="targetmineGraphSVG">
-					<g id="graph"></g>
+					<g id="graph">
+						<text id="left-axis-label" transform="rotate(-90)">
+							Human Body Index Gene Exp. Level
+						</text>
+						<g id="points"></g>
+					</g>
 				</svg>
 				<div id="rightColumn_bioActivity" className="rightColumn">
 					<div id="visuals-div" className="flex-table">

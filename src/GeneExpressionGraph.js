@@ -30,10 +30,8 @@ export class GeneExpressionGraph{
 		/* width/height of canvas and margins for the graph */
 		this._width = 1000;
 		this._height = 400;
-		this._margin = {top: 40, right: 40, bottom: 40, left: 40};
+		this._margin = {top: 40, right: 40, bottom: 40, left: 60};
 
-		/* Title for each axis in the graph */
-		this._y = 'value';
 		/* Different levels of specificity at which we can look gene expression */
 		this._levels = {
 			0: 'category',
@@ -47,6 +45,7 @@ export class GeneExpressionGraph{
 		this._displayTree = this.initDisplayTree(geneObj.probeSets);
 		this._xLabels = [...this._displayTree.get('category').keys()];
 		this._xLevels =  Array(this._xLabels.length).fill(0);
+		this._colors = this.assignColors([...this._displayTree.get('category').keys()]);
 		
 		/* parse data to local storage */
 		let {min, max, points} = this.processData(geneObj.probeSets);
@@ -57,18 +56,25 @@ export class GeneExpressionGraph{
 		/* Initialize the Axis of the graph */
 		this._xAxis = this.initXAxis();
 		this._yAxis = this.initYAxis();
-		// /* Initialize data points position and color */
-		// this.setPointPositions();
+		/* Initialize data points position and color */
+		this.setPointPositions();
 		// this.initColorsAndShapes();
 		// this.assignColors();
 		// /* Initialize histogram for violin plots display */
 		// this.initHistogramBins();
 
-		// this.initDOM();
-
 		// this.updateVisualsTable();
 
 		this.plot();
+	}
+
+	/**
+	 * Assign a color to each category in the datset
+	 */
+	assignColors(labels){
+		let colors = new Map();
+		labels.forEach((k,i) => colors.set(k, d3.schemeCategory10[i%d3.schemeCategory10.length]));
+		return colors;
 	}
 
 	// /**
@@ -194,12 +200,14 @@ export class GeneExpressionGraph{
 		
 		probeSets.forEach(ps => {
 			let exp = ps.expressions.map(e => {
+				let category = e.tissue.category.replace(/[-_/]/g,' ').split(' ')[0].toLowerCase();
 				let robj = {
 					call: e.call,
 					value: e.value,
-					category: e.tissue.category,
-					organ: e.tissue.organ,
-					name: e.tissue.name
+					category, 
+					organ: e.tissue.organ.replace(/[-_/]/g,' ').split(' ')[0].toLowerCase(),
+					name: e.tissue.name.replace(/[-_/]/g,' ').split(' ')[0].toLowerCase(),
+					color: this._colors.get(category)
 				};
 				max = e.value > max ? e.value : max;
 				min = e.value < min ? e.value : min;
@@ -209,57 +217,9 @@ export class GeneExpressionGraph{
 		});
 		
 		points = points.flat();
-		/* cleaning of the string provided triming of starting and end charachters
-		 * and replacement of ', ' for line separators */
-		// data = data.substring(1, data.length-1);
-		// data = data.replace(/, /g, '\n');
-		// /* local storage of the data */
-		// this._data = d3.tsvParse(data, d3.autoType);
 		return {min, max, points};
 	}
 	
-	// /**
-	//  * Initialize DOM elements
-	//  */
-	// initDOM(){
-	//   /* init common DOM elements */
-	//   const elements = [
-	//     // main visualization area
-	//     {
-	//       type: 'svg',
-	//       id: `canvas_${this._type}`,
-	//       attributes: new Map([
-	//         ['class', 'targetmineGraphSVG'],
-	//         ['viewBox', `0 0 ${this._width} ${this._height}`]
-	//       ]),
-	//       children: [
-	//         { type: 'g', id: 'graph' },
-	//       ]
-	//     },
-	//     // right column controls
-	//     { 
-	//       type: 'div',
-	//       id: `rightColumn_${this._type}`,
-	//       attributes: new Map([
-	//         ['class', 'rightColumn'],
-	//       ]),
-	//       children:[
-	//         { 
-	//           type: 'div', 
-	//           id: 'visuals-div', 
-	//           children: [
-	//             { type: 'br', },
-	//             { type: 'label', attributes: new Map([ ['text', 'Other Visuals'] ])},
-	//             { type: 'table', id: 'visuals-table', children: [ {type: 'tbody'}]},
-	//           ]
-	//         }
-	//       ]
-	//     },
-	//   ];
-		
-	//   super.addToDOM(this._containerId, elements);
-	// }
-
 	// /**
 	//  *
 	//  */
@@ -330,31 +290,6 @@ export class GeneExpressionGraph{
 	//     self.plot();
 	//   });
 	// }
-
-	/**
-	 * Set the position (in display coordinates) of each point in the data
-	 *
-	 * @param {boolean} jitter Should the position of the point be randomly
-	 * jittered along the X axis or not.
-	 */
-	setPointPositions(jitter=false){
-		let self = this;
-		let X = this._xAxis.scale();
-		let dx = X.bandwidth()/2;
-		let Y = this._yAxis.scale();
-
-		this._xLabels.forEach((item,i)=>{
-			let key = self._levels[self._xLevels[i]]; //one of [category, organ, name]
-			self._data.forEach(d=>{
-				if( d[key] === self._xLabels[i] ){
-					d.x = X(d[key])+dx;
-					if( jitter ) d.x -= (dx/2)*Math.random();
-					d.y = Y(d[this._y]);
-				}
-			});
-		});
-	}
-
 
 	/**
 	 * Collapse the labels associated to the X axis
@@ -449,23 +384,25 @@ export class GeneExpressionGraph{
 		this.plotXAxis();
 		this.plotYAxis();
 
-		// /* redraw the points, using the updated positions and colors */
-		// let canvas = d3.select('svg#canvas_geneExpression > g#graph');
-		// canvas.selectAll('#points').remove();
+		/* redraw the points, using the updated positions and colors */
+		// d3.select('svg#canvas_geneExpression > g#graph')
+		// 	.select('#points').remove();
 		// canvas.append('g')
 		//   .attr('id', 'points')
-		//   .attr('transform', 'translate('+this._margin.left+',0)')
+		//   
 		// ;
 
-		// /* for each data point, generate a group where we can add multiple svg
+		// redraw value points /* for each data point, generate a group where we can add multiple svg
 		//  * elements */
-		// let pts = d3.select('#points').selectAll('g')
-		//   .data(this._data);
-		// pts.enter().append('circle')
-		//   .attr('cx', d => d.x)
-		//   .attr('cy', d => d.y)
-		//   .attr('r', '3')
-		//   .style('fill', d => d.color)
+		d3.select('g#points')
+			.attr('transform', 'translate('+this._margin.left+',0)')
+			.selectAll('g')
+			.data(this._points)
+			.enter().append('circle')
+				.attr('cx', d => d.x)
+				.attr('cy', d => d.y)
+				.attr('r', '3')
+				.style('fill', d => d.color)
 		//   // let tooltip = point.append('svg:title')
 		//   .append('svg:title')
 		// 		.text( d => {
@@ -474,6 +411,7 @@ export class GeneExpressionGraph{
 		// 				'\nName: '+d.name+
 		// 				'\nValue: '+d.value;
 		// 		})
+			.exit().remove();
 		// ;
 
 		// /* add violin plots if selected by the user */
@@ -528,8 +466,8 @@ export class GeneExpressionGraph{
 	}
 
 	/**
-   * Add DOM elements required for Y-axis display
-   */
+	 * Add DOM elements required for Y-axis display
+	 */
 	plotYAxis(){
 		// remove previous components 
 		d3.select('#left-axis').remove();
@@ -541,19 +479,35 @@ export class GeneExpressionGraph{
 			.attr('transform', 'translate('+this._margin.left+',0)')
 			.call(this._yAxis);
 
-		// /* if defined, add a title to the axis */
-		// if( this._y !== undefined ){
-		// 	canvas.selectAll('text#left-axis-label').remove();
-		// 	let label = canvas.append('text')
-		// 		.attr('id', 'left-axis-label')
-		// 		.attr('transform', 'rotate(-90)')
-		// 		.attr('y', -this._margin.left/3)
-		// 		.attr('x', -this._height/2)
-		// 		.attr('dy', '1em')
-		// 		.style('text-anchor', 'middle')
-		// 		.text(this._y)
-		// 	;
-		// }
+		/* if defined, add a title to the axis */
+		d3.select('#left-axis-label')
+			.attr('y', 0)
+			.attr('x', -this._height/2)
+			.attr('dy', '1em')
+			.style('text-anchor', 'middle');
+		
 	}
 
+	/**
+	 * Set the position (in viewBox coordinates) of each point in the data
+	 *
+	 * @param {boolean} jitter Should the position of the point be randomly
+	 * jittered along the X axis or not.
+	 */
+	setPointPositions(jitter=false){
+		let X = this._xAxis.scale();
+		let dx = X.bandwidth()/2; // for jitter purposes
+		let Y = this._yAxis.scale();
+
+		this._xLabels.forEach((label, i) => {
+			const lvl = this._levels[this._xLevels[i]];
+			this._points.forEach(p => {
+				if(p[lvl] === label){
+					p.x = X(p[lvl])+dx;
+					p.x = jitter ?  p.x-((dx/2)*Math.random()) : p.x;
+					p.y = Y(p.value);	
+				} 
+			});
+		},this);
+	}
 }
