@@ -67,7 +67,9 @@ export class GeneExpressionGraph{
 		d3.select('g#violins')
 			.attr('transform', 'translate('+this._margin.left+',0)');
 
-		this.plot();
+		this.plotXAxis();
+		this.plotYAxis();
+		this.plotPoints();
 	}
 
 	/**
@@ -79,35 +81,35 @@ export class GeneExpressionGraph{
 		return colors;
 	}
 
-	// /**
-	//  * Assert if two elements belong to the same branch of the displayTree
-	//  *
-	//  * @param {string} source
-	//  * @param {string} target
-	//  * @param {int} sourceLevel
-	//  * @return {boolean} whether the source element belongs to the same branch in
-	//  * the display tree as the target element.
-	//  */
-	// belongToSameBranch(source, target, sourceLevel, targetLevel){
-	//   /* if both are on the same lvl and share the parent, they are on the same branch */
-	//   if(
-	//     sourceLevel === targetLevel &&
-	//     this._displayTree[sourceLevel][source].parent === this._displayTree[targetLevel][target].parent
-	//   ){
-	//     return true;
-	//   }
+	/**
+	 * Assert if two elements belong to the same branch of the displayTree
+	 *
+	 * @param {string} source
+	 * @param {string} target
+	 * @param {int} sourceLevel
+	 * @return {boolean} whether the source element belongs to the same branch in
+	 * the display tree as the target element.
+	 */
+	belongToSameBranch(source, target, sourceLevel, targetLevel){
+		/* if both are on the same lvl and share the parent, they are on the same branch */
+		if(
+			sourceLevel === targetLevel &&
+			this._displayTree[sourceLevel][source].parent === this._displayTree[targetLevel][target].parent
+		){
+			return true;
+		}
 
-	//   /* if source is below target, then they are on the same branch only if target
-	//     and source share a common ancestor */
-	//   if( sourceLevel > targetLevel ){
-	//     return this.belongToSameBranch(this._displayTree[sourceLevel][source].parent, target, sourceLevel-1, targetLevel);
-	//   }
+		/* if source is below target, then they are on the same branch only if target
+			and source share a common ancestor */
+		if( sourceLevel > targetLevel ){
+			return this.belongToSameBranch(this._displayTree[sourceLevel][source].parent, target, sourceLevel-1, targetLevel);
+		}
 
-	//   /* if source is above target, then they will only be displayed together if
-	//     they are on different branches, thus always false.
-	//     Same applies for all other cases. */
-	//   return false;
-	// }
+		/* if source is above target, then they will only be displayed together if
+			they are on different branches, thus always false.
+			Same applies for all other cases. */
+		return false;
+	}
 
 	/**
 	 * Initialize a tree of the whole structure of the graph.
@@ -284,7 +286,6 @@ export class GeneExpressionGraph{
 	 * @return {boolean} whether the collapsing took place or not
 	 */
 	collapseXLabels(target){
-
 		let i = this._xLabels.indexOf(target);
 		let lvl = this._xLevels[i];
 
@@ -320,7 +321,8 @@ export class GeneExpressionGraph{
 			this.initXAxis();
 			this.setPointPositions(d3.select('#cb-jitter').property('checked'));
 			this.initHistogramBins();
-			this.plot();
+			this.plotXAxis();
+			this.plotPoints();
 			return true;
 		}
 		else{
@@ -338,36 +340,26 @@ export class GeneExpressionGraph{
 	expandXLabels(target){
 		let i = this._xLabels.indexOf(target);
 		let lvl = this._xLevels[i];
-		if( lvl < 2 ){
-			let newLabels = this._displayTree[lvl][target].children;
-			let newLevels = Array(newLabels.length).fill(lvl+1);
+		// exit if the level cannot be expanded
+		if (lvl >= 2) return false;
 
-			this._xLabels.splice(i, 1, newLabels);
-			this._xLabels = this._xLabels.flat();
+		let type = this._levels[lvl];
+		let newLabels = this._displayTree.get(type).get(target).children;
+		let newLevels = Array(newLabels.length).fill(lvl+1);
 
-			this._xLevels.splice(i, 1, newLevels);
-			this._xLevels = this._xLevels.flat();
+		this._xLabels.splice(i, 1, newLabels);
+		this._xLabels = this._xLabels.flat();
+		this._xLevels.splice(i, 1, newLevels);
+		this._xLevels = this._xLevels.flat();
 
-			/* redefine the x Axis with the new list of labels */
-			this.initXAxis();
-			this.setPointPositions(d3.select('#cb-jitter').property('checked'));
-			this.initHistogramBins();
-			/* re-plot the graph */
-			this.plot();
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Plot a Gene Expression Graph
-	 */
-	plot(){
-		/* Display the X and Y axis of the graph */
+		/* redefine the x Axis with the new list of labels */
+		this._xAxis = this.initXAxis();
+		this.setPointPositions(d3.select('#cb-jitter').property('checked'));
+		this._bins = this.initHistogramBins();
+		/* re-plot the graph */
 		this.plotXAxis();
-		this.plotYAxis();
-
 		this.plotPoints();
+		return true;
 	}
 
 	/**
@@ -455,17 +447,16 @@ export class GeneExpressionGraph{
 						.exit().remove();
 		},this);
 
-	// 	/* assign click function to axis labels if required */
-	// 	d3.selectAll('g#bottom-axis > g.tick > text')
-	// 		/* on left click, expand the current level */
-	// 		.on('click', (ev,d) => { self.expandXLabels(d); })
-	// 		/* on right click, collapse the current level */
-	// 		.on('contextmenu', (ev,d) => {
-	// 			ev.preventDefault();
-	// 			self.collapseXLabels(d);
-	// 		})
-	// 	;
-	// }
+		/* assign click function to axis labels if required */
+		let self = this;
+		d3.selectAll('g#bottom-axis > g.tick > text')
+			/* on left click, expand the current level */
+			.on('click', (ev,d) => { self.expandXLabels(d); })
+			/* on right click, collapse the current level */
+			.on('contextmenu', (ev,d) => {
+				ev.preventDefault();
+				self.collapseXLabels(d);
+			});
 	}
 
 	/**
