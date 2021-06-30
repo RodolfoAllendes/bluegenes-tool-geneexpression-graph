@@ -55,6 +55,7 @@ function main(el, service, imEntity, state, config) {
 							Human Body Index Gene Exp. Level
 						</text>
 						<g id="points"></g>
+						<g id="violins"></g>
 					</g>
 				</svg>
 				<div id="rightColumn_bioActivity" className="rightColumn">

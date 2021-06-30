@@ -58,12 +58,14 @@ export class GeneExpressionGraph{
 		this._yAxis = this.initYAxis();
 		/* Initialize data points position and color */
 		this.setPointPositions();
-		// this.initColorsAndShapes();
-		// this.assignColors();
-		// /* Initialize histogram for violin plots display */
-		// this.initHistogramBins();
+		/* Initialize histogram for violin plots display */
+		this._bins = this.initHistogramBins();
+		this.initFunctions();
 
-		// this.updateVisualsTable();
+		d3.select('g#points')
+			.attr('transform', 'translate('+this._margin.left+',0)');
+		d3.select('g#violins')
+			.attr('transform', 'translate('+this._margin.left+',0)');
 
 		this.plot();
 	}
@@ -156,6 +158,40 @@ export class GeneExpressionGraph{
 	}
 
 	/**
+	 * Bin the data points for violin plots
+	 */
+	initHistogramBins(nBins=10){
+		// define the number of bins and the bounds for each one of them 
+		let histogram = d3.bin()
+			.domain(this._yAxis.scale().domain())
+			.thresholds(this._yAxis.scale().ticks(nBins))
+			.value(d => d);
+		// pre-process the data array to extract the label and values only 
+		let filteredData = this._points.map( p => {
+			let value = p.value;
+			let idx = this._xLabels.indexOf(p.category);
+			if (idx !== -1 && this._xLevels[idx] == 0)
+				return {label: p.category, value};
+			else{
+				idx = this._xLabels.indexOf(p.organ);
+				if (idx !== -1 && this._xLevels[idx] == 1)
+					return {label: p.organ, value};
+			}
+			return {label: p.name, value};
+		},this);
+	
+		return d3.rollup(
+			filteredData, //self._data,
+			d => {
+				let input = d.map(g => g.value);
+				let bins = histogram(input);
+				return bins;
+			},
+			d => d.label
+		);
+	}
+
+	/**
 	 * Initialize the X axis of the graph
 	 */
 	initXAxis(){
@@ -207,7 +243,8 @@ export class GeneExpressionGraph{
 					category, 
 					organ: e.tissue.organ.replace(/[-_/]/g,' ').split(' ')[0].toLowerCase(),
 					name: e.tissue.name.replace(/[-_/]/g,' ').split(' ')[0].toLowerCase(),
-					color: this._colors.get(category)
+					color: this._colors.get(category),
+					pid: ps.probeSetId
 				};
 				max = e.value > max ? e.value : max;
 				min = e.value < min ? e.value : min;
@@ -220,76 +257,24 @@ export class GeneExpressionGraph{
 		return {min, max, points};
 	}
 	
-	// /**
-	//  *
-	//  */
-	// initHistogramBins(nBins=10){
-	//   let self = this;
-	//   /* function used to define the number of bins and the bounds for each of
-	//    * them */
-	//   let histogram = d3.bin()
-	//     .domain(self._yAxis.scale().domain())
-	//     .thresholds(self._yAxis.scale().ticks(nBins))
-	//     .value(d => d)
-	//     ;
-	//   /* pre-process the data array to extract the label and values only */
-	//   let filteredData = this._data.map( d => {
-	//     let idx = self._xLabels.indexOf(d['category'])
-	//     if( idx !== -1 && self._xLevels[idx] == 0)
-	//       return {label: d['category'], value: d['value']};
-	//     else{
-	//       idx = self._xLabels.indexOf(d['organ'])
-	//       if ( idx !== -1 && self._xLevels[idx] == 1)
-	//         return {label: d['organ'], value: d['value']};
-	//     }
-	//     return {label: d['name'], value: d['value']};
-	//   });
-
-	//   this._bins = d3.rollup(
-	//     filteredData, //self._data,
-	//     d => {
-	//       let input = d.map(g => g.value);
-	//       let bins = histogram(input);
-	//       return bins;
-	//     },
-	//     d => d.label
-	//   );
-	// }
-
-
-
-	// /**
-	// *
-	// */
-	// updateVisualsTable(){
-	//   let self = this;
-	//   /* these are the DOM elements in each row of the table */
-	//   let rowElements =[ 'violin', 'jitter' ];
-	//   let rowComponents = [
-	//     { 'type': 'input', 'attr': [['type', 'checkbox'], ['class','flex-cell display']] },
-	//     { 'type': 'div', 'attr':[['class', 'flex-cell label']] },
-	//   ];
-	//   this.initTableRows('#visuals-table', 'visual', rowElements, rowComponents);
-	//   /* Customization of DOM elements */
-	//   d3.select('#visuals-table').selectAll('.label')
-	//     .data(rowElements)
-	//     .text( d => 'Add '+d )
-	//   d3.select('#visuals-table').selectAll('input')
-	//     .data(rowElements)
-	//     .attr('id', d => 'cb-'+d)
-	//   /* Event handlers association */
-	//   d3.select('#cb-violin').on('change', function(){
-	//     if( this.checked )
-	//       self.plotViolins();
-	//     else{
-	//       d3.selectAll("#violins").remove();
-	//     }
-	//   });
-	//   d3.select('#cb-jitter').on('change', function(){
-	//     self.setPointPositions(this.checked);
-	//     self.plot();
-	//   });
-	// }
+	/**
+	 * Assing functions to check-boxes
+	 */
+	initFunctions(){
+		let self = this;
+		/* Event handlers association */
+		d3.select('#cb-violin').on('change', function(){
+			if( this.checked )
+				self.plotViolins();
+			else{
+				d3.select('#violins').selectAll('g').remove();
+			}
+		});
+		d3.select('#cb-jitter').on('change', function(){
+			self.setPointPositions(this.checked);
+			self.plotPoints();
+		});
+	}
 
 	/**
 	 * Collapse the labels associated to the X axis
@@ -374,8 +359,6 @@ export class GeneExpressionGraph{
 		return false;
 	}
 
-
-
 	/**
 	 * Plot a Gene Expression Graph
 	 */
@@ -384,40 +367,60 @@ export class GeneExpressionGraph{
 		this.plotXAxis();
 		this.plotYAxis();
 
-		/* redraw the points, using the updated positions and colors */
-		// d3.select('svg#canvas_geneExpression > g#graph')
-		// 	.select('#points').remove();
-		// canvas.append('g')
-		//   .attr('id', 'points')
-		//   
-		// ;
+		this.plotPoints();
+	}
 
-		// redraw value points /* for each data point, generate a group where we can add multiple svg
-		//  * elements */
-		d3.select('g#points')
-			.attr('transform', 'translate('+this._margin.left+',0)')
-			.selectAll('g')
+	/**
+	 * 
+	 */
+	plotPoints(){
+		d3.select('g#points').selectAll('circle')
 			.data(this._points)
-			.enter().append('circle')
+			.join('circle')
 				.attr('cx', d => d.x)
 				.attr('cy', d => d.y)
 				.attr('r', '3')
 				.style('fill', d => d.color)
-		//   // let tooltip = point.append('svg:title')
-		//   .append('svg:title')
-		// 		.text( d => {
-		// 			return 'Category: '+d.category+
-		// 				'\nOrgan: '+d.organ+
-		// 				'\nName: '+d.name+
-		// 				'\nValue: '+d.value;
-		// 		})
-			.exit().remove();
-		// ;
+				.append('svg:title')
+					.text( d => {
+						return 'Probe Set: '+d.pid+
+							'\nCall: '+d.call+
+							'\nValue: '+parseFloat(d.value).toFixed(3);
+					});
+	}
 
-		// /* add violin plots if selected by the user */
-		// if( d3.select('#cb-violin').property('checked') )
-		// 	this.plotViolins();
-
+	/**
+	 *
+	 */
+	plotViolins(){
+		let X = this._xAxis.scale();
+		let Y = this._yAxis.scale();
+		
+		// Find the largest number of elements contained by a bin 
+		let maxNum = 0;
+		this._bins.forEach(b => {
+			let lengths = b.map(g => g.length); // the # of eles in each bin
+			let longest = d3.max(lengths); // the maximum among the previous values
+			maxNum = longest > maxNum ? longest : maxNum; // update the global maximum
+		});
+		let xNum = d3.scaleLinear()
+			.range([0, X.bandwidth()])
+			.domain([-maxNum, maxNum]);
+	
+		d3.select('g#violins').selectAll('g')
+			.data(this._bins)
+			.join('g') // So now we are working group per group
+				.attr('class', 'violin')
+				.attr('transform', d => 'translate(' + (X(d[0])+(X.bandwidth()/10)) +' ,0)')
+					.append('path')
+						.datum(d => d[1]) //extract only the bins
+						.attr('class', 'violin')
+						.attr('d', d3.area()
+							.x0(xNum(0))
+							.x1(d => xNum(d.length))
+							.y(d => Y(d.x0))
+							.curve(d3.curveCatmullRom)    // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
+						);
 	}
 
 	/** 
