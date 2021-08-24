@@ -168,8 +168,18 @@ export class GeneExpressionGraph{
 			.domain(this._yAxis.scale().domain())
 			.thresholds(this._yAxis.scale().ticks(nBins))
 			.value(d => d);
-		// pre-process the data array to extract the label and values only 
-		let filteredData = this._points.map( p => {
+		// pre-process data to filter only displayed points 
+		let choices = [];
+		d3.selectAll('div#dataPoints-table input.row-checkbox')
+			.each(function(){
+				let cb = d3.select(this);
+				if(cb.property('checked'))
+					choices.push(cb.property('value'));
+			});
+		let data = this._points.filter(p => choices.includes(p.call));
+		// extract label and values from data only 
+		// let filteredData = this._points.map( p => {
+		let filteredData = data.map(p => {
 			let value = p.value;
 			let idx = this._xLabels.indexOf(p.category);
 			if (idx !== -1 && this._xLevels[idx] == 0)
@@ -274,7 +284,11 @@ export class GeneExpressionGraph{
 		});
 
 		d3.selectAll('div#dataPoints-table input.row-checkbox')
-			.on('change', function(){ self.plotPoints(); });
+			.on('change', function(){ 
+				self._bins = self.initHistogramBins();
+				self.plotViolins(d3.select('#cb-violin').property('checked'));
+				self.plotPoints(); 
+			});
 	}
 
 	/**
