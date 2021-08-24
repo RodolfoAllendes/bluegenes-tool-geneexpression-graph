@@ -2,7 +2,7 @@
 import { GeneExpressionGraph } from './GeneExpressionGraph.js';
 
 // make sure to export main, with the signature
-function main(el, service, imEntity, state, config) {
+function main(el, service, imEntity, state, config, navigate) {
 	if (!state) state = {};
 	if (!el || !service || !imEntity || !state || !config) {
 		throw new Error('Call main with correct signature');
@@ -43,7 +43,7 @@ function main(el, service, imEntity, state, config) {
 		]);
 		return tmService.records(query); 
 	}).then(rows => {
-		window.GeneExpressionGraph = new GeneExpressionGraph(rows[0]);
+		window.GeneExpressionGraph = new GeneExpressionGraph(rows[0], navigate);
 	});
 	// create the top-level container for the graph
 	el.innerHTML = `
@@ -86,6 +86,14 @@ function main(el, service, imEntity, state, config) {
 							<div id="visuals-jitter" class="flex-row">
 								<input type="checkbox" id="cb-jitter"></input>
 								<label class="row-label">Jitter</label>
+							</div>
+						</div>
+					</div>
+					<div id="links-div" class="flex-table">
+						<label>Dataset</label>
+						<div id="dataset-table">
+							<div id="dataset-hbi" class="flex-row">
+								<label class="row-label link">HBI Dataset</label>
 							</div>
 						</div>
 					</div>

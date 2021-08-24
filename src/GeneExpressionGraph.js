@@ -17,7 +17,7 @@ export class GeneExpressionGraph{
 	 * Constructor
 	 * @param {object} geneObj The object with the data to be displayed
 	 */
-	constructor(geneObj){
+	constructor(geneObj, navigate){
 		/* finish execution if no data available */
 		if( geneObj.probeSets.length === 0 ){
 			d3.select('#geneExpressionGraph-div')
@@ -30,6 +30,7 @@ export class GeneExpressionGraph{
 		this._width = 1000;
 		this._height = 400;
 		this._margin = {top: 40, right: 40, bottom: 40, left: 60};
+		this._navigate = navigate;
 
 		/* Different levels of specificity at which we can look gene expression */
 		this._levels = {
@@ -288,6 +289,14 @@ export class GeneExpressionGraph{
 				self._bins = self.initHistogramBins();
 				self.plotViolins(d3.select('#cb-violin').property('checked'));
 				self.plotPoints(); 
+			});
+
+		d3.select('div#dataset-hbi label')
+			.on('click', function(){
+				self._navigate('report', {
+					type: 'DataSet',
+					id: 132000002 // only valid for brak
+				});
 			});
 	}
 
