@@ -3,7 +3,6 @@
  * Violin and jitter display based on the code from:
  * https://www.d3-graph-gallery.com/graph/violin_jitter.html
  */
-// import * as d3 from 'd3';
 const d3 = require('d3');
 
 /**
@@ -11,7 +10,7 @@ const d3 = require('d3');
  * @classdesc Used to display a Gene Expression level graph in the report page
  * of genes
  * @author Rodolfo Allendes
- * @version 1.0
+ * @version 1.1
  */
 export class GeneExpressionGraph{
 	/**
@@ -64,9 +63,9 @@ export class GeneExpressionGraph{
 
 		d3.select('svg#canvas_geneExpression')
 			.attr('viewBox', '0 0 '+this._width+' '+this._height);
-		d3.select('g#points')
+		d3.select('svg#canvas_geneExpression g#points')
 			.attr('transform', 'translate('+this._margin.left+',0)');
-		d3.select('g#violins')
+		d3.select('svg#canvas_geneExpression g#violins')
 			.attr('transform', 'translate('+this._margin.left+',0)');
 
 		this.plotXAxis();
@@ -273,6 +272,9 @@ export class GeneExpressionGraph{
 			self.setPointPositions(this.checked);
 			self.plotPoints();
 		});
+
+		d3.selectAll('div#dataPoints-table input.row-checkbox')
+			.on('change', function(){ self.plotPoints(); });
 	}
 
 	/**
@@ -363,8 +365,17 @@ export class GeneExpressionGraph{
 	 * 
 	 */
 	plotPoints(){
-		d3.select('g#points').selectAll('circle')
-			.data(this._points)
+		let choices = [];
+		d3.selectAll('div#dataPoints-table input.row-checkbox')
+			.each(function(){
+				let cb = d3.select(this);
+				if(cb.property('checked'))
+					choices.push(cb.property('value'));
+			});
+		let data = this._points.filter(p => choices.includes(p.call));
+		
+		d3.select('svg#canvas_geneExpression g#points').selectAll('circle')
+			.data(data)
 			.join('circle')
 				.attr('cx', d => d.x)
 				.attr('cy', d => d.y)
@@ -383,7 +394,7 @@ export class GeneExpressionGraph{
 	 */
 	plotViolins(display=true){
 		// remove previous display
-		d3.select('g#violins').selectAll('g').remove();
+		d3.select('svg#canvas_geneExpression g#violins').selectAll('g').remove();
 		
 		if (!display)	return;
 			
@@ -401,7 +412,7 @@ export class GeneExpressionGraph{
 			.range([0, X.bandwidth()])
 			.domain([-maxNum, maxNum]);
 	
-		d3.select('g#violins').selectAll('g')
+		d3.select('svg#canvas_geneExpression g#violins').selectAll('g')
 			.data(this._bins)
 			.join('g') // So now we are working group per group
 				.attr('class', 'violin')
@@ -422,7 +433,7 @@ export class GeneExpressionGraph{
 	 */
 	plotXAxis(){
 		// remove previous axis components
-		d3.select('#bottom-axis').remove();
+		d3.select('svg#canvas_geneExpression #bottom-axis').remove();
 
 		// add the axis to the display
 		d3.select('svg#canvas_geneExpression > g#graph')
@@ -432,12 +443,12 @@ export class GeneExpressionGraph{
 			.call(this._xAxis);
 
 		// assign an id to all text used for ticks in the axis 
-		d3.selectAll('g#bottom-axis > g.tick')
+		d3.selectAll('svg#canvas_geneExpression g#bottom-axis > g.tick')
 			.attr('id', d => d);
 
 		// change the text for the display value associated to it 
 		this._xLabels.forEach((item,i) => {
-			d3.select('g.tick#'+item+'>text')
+			d3.select('svg#canvas_geneExpression g.tick#'+item+'>text')
 				.text('')
 				.selectAll('tspan')
 					.data(this._displayTree.get(this._levels[this._xLevels[i]]).get(item).display)
@@ -449,7 +460,7 @@ export class GeneExpressionGraph{
 
 		/* assign click function to axis labels if required */
 		let self = this;
-		d3.selectAll('g#bottom-axis > g.tick')
+		d3.selectAll('svg#canvas_geneExpression g#bottom-axis > g.tick')
 			.on('click', (ev,d) => self.expandXLabels(d) )
 			.on('contextmenu', (ev,d) => {
 				ev.preventDefault();
@@ -462,7 +473,7 @@ export class GeneExpressionGraph{
 	 */
 	plotYAxis(){
 		// remove previous components 
-		d3.select('#left-axis').remove();
+		d3.select('svg#canvas_geneExpression #left-axis').remove();
 		
 		// add the axis to the display
 		d3.select('svg#canvas_geneExpression > g#graph')
@@ -472,7 +483,7 @@ export class GeneExpressionGraph{
 			.call(this._yAxis);
 
 		/* if defined, add a title to the axis */
-		d3.select('#left-axis-label')
+		d3.select('svg#canvas_geneExpression #left-axis-label')
 			.attr('y', 0)
 			.attr('x', -this._height/2)
 			.attr('dy', '1em')

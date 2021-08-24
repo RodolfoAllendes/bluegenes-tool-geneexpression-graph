@@ -58,22 +58,38 @@ function main(el, service, imEntity, state, config) {
 						<g id="violins"></g>
 					</g>
 				</svg>
-				<div id="rightColumn_bioActivity" className="rightColumn">
-					<div id="visuals-div" className="flex-table">
+				<div id="rightColumn_bioActivity" class="rightColumn">
+					<div id="dataPoints-div class="flex-table">
+						<label>Displayed Values</label>
+						<div id="dataPoints-table">
+							<div id="visuals-violin" class="flex-row">
+								<input type="checkbox" class="row-checkbox" id="cb-present" value="P" checked></input>
+								<label class="row-label">Present (P)</label>
+							</div>
+							<div id="visuals-violin" class="flex-row">
+								<input type="checkbox" class="row-checkbox" id="cb-marginal" value="M" checked></input>
+								<label class="row-label">Marginal(M)</label>
+							</div>
+							<div id="visuals-violin" class="flex-row" disabled>
+								<input type="checkbox" class="row-checkbox" id="cb-absent" value="A" ></input>
+								<label class="row-label">Absent (A)</label>
+							</div>
+						</div>
+					</div>
+					<div id="visuals-div" class="flex-table">
 						<label>Other Visuals</label>
 						<div id="visuals-table">
-							<div id="visuals-violin" className="flex-row">
+							<div id="visuals-violin" class="flex-row">
 								<input type="checkbox" id="cb-violin"></input>
-								<label className="row-label">Violin plot</label>
+								<label class="row-label">Violin plot</label>
 							</div>
-							<div id="visuals-jitter" className="flex-row">
+							<div id="visuals-jitter" class="flex-row">
 								<input type="checkbox" id="cb-jitter"></input>
-								<label className="row-label">Jitter</label>
+								<label class="row-label">Jitter</label>
 							</div>
 						</div>
 					</div>
 				</div>
-				<div id="modal_bioActivity" className="targetmineGraphModal"></div>
 			</div>
 		</div>
 	`;
