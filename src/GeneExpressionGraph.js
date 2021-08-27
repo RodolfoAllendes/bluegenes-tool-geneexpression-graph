@@ -295,7 +295,7 @@ export class GeneExpressionGraph{
 			.on('click', function(){
 				self._navigate('report', {
 					type: 'DataSet',
-					id: 132000002 // only valid for brak
+					id: 133000002 // only valid for brak
 				});
 			});
 	}
