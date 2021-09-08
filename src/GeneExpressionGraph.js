@@ -16,16 +16,15 @@ export class GeneExpressionGraph{
 	/**
 	 * Constructor
 	 * @param {object} geneObj The object with the data to be displayed
+	 * @param {object} navigate Function used to navigate to different TM pages
 	 */
 	constructor(geneObj, navigate){
 		/* finish execution if no data available */
 		if( geneObj.probeSets.length === 0 ){
-			d3.select('#geneExpressionGraph-div')
+			d3.select('div#geneExpressionGraph')
 				.text('No Gene Expression Data to Display');
 			return;
 		}
-		this._type = 'geneExpressionGraph';
-		this._name = geneObj.symbol;
 		/* width/height of canvas and margins for the graph */
 		this._width = 1000;
 		this._height = 400;
@@ -75,7 +74,11 @@ export class GeneExpressionGraph{
 	}
 
 	/**
-	 * Assign a color to each category in the datset
+	 * Assign a color to each category in the dataset. Color is assigned based in
+	 * the schemeCategory10 array available from D3
+	 * 
+	 * @param {Array} labels The list of strings to be assigned colors
+	 * @return {Map} A map that contains for each key (label) its assigned color
 	 */
 	assignColors(labels){
 		let colors = new Map();
@@ -86,9 +89,10 @@ export class GeneExpressionGraph{
 	/**
 	 * Assert if two elements belong to the same branch of the displayTree
 	 *
-	 * @param {string} source
-	 * @param {string} target
-	 * @param {int} sourceLevel
+	 * @param {string} src
+	 * @param {string} tgt
+	 * @param {int} srcLvl
+	 * @param {int} tgtLvl
 	 * @return {boolean} whether the source element belongs to the same branch in
 	 * the display tree as the target element.
 	 */
@@ -116,6 +120,10 @@ export class GeneExpressionGraph{
 	 * Initialize a tree of the whole structure of the graph.
 	 * In order to handle the transitions between different levels within the tree
 	 * being displayed, a whole tree is build on load.
+	 * 
+	 * @param {Array} probeSets Based on an array of probe sets retrieved from TM,
+	 * generate a tree structure that links the different labels associated to 
+	 * each level of the tree
 	 */
 	initDisplayTree(probeSets){
 		let category = new Map();
@@ -162,6 +170,8 @@ export class GeneExpressionGraph{
 
 	/**
 	 * Bin the data points for violin plots
+	 * 
+	 * @param {int} nBins the number of bins to use
 	 */
 	initHistogramBins(nBins=10){
 		// define the number of bins and the bounds for each one of them 
@@ -171,7 +181,7 @@ export class GeneExpressionGraph{
 			.value(d => d);
 		// pre-process data to filter only displayed points 
 		let choices = [];
-		d3.selectAll('div#dataPoints-table input.row-checkbox')
+		d3.selectAll('#geneExpressionGraph #dataPoints-div input.row-checkbox')
 			.each(function(){
 				let cb = d3.select(this);
 				if(cb.property('checked'))
@@ -194,7 +204,7 @@ export class GeneExpressionGraph{
 		},this);
 	
 		return d3.rollup(
-			filteredData, //self._data,
+			filteredData, 
 			d => {
 				let input = d.map(g => g.value);
 				let bins = histogram(input);
@@ -239,7 +249,7 @@ export class GeneExpressionGraph{
 	 * the ArrayList is converted to its String representation before being
 	 * transfered, items in the Array are separated by the character ','
 	 *
-	 * @param {string} data The Java ArrayList string representation of the data
+	 * @param {string} probeSets The Java ArrayList string representation of the data
 	 * retrieved from the database for the construction of the graph.
 	 */
 	processData(probeSets){
@@ -276,22 +286,23 @@ export class GeneExpressionGraph{
 	initFunctions(){
 		let self = this;
 		/* Event handlers association */
-		d3.select('#cb-violin').on('change', function(){
-			self.plotViolins(this.checked);
-		});
-		d3.select('#cb-jitter').on('change', function(){
-			self.setPointPositions(this.checked);
-			self.plotPoints();
-		});
-
-		d3.selectAll('div#dataPoints-table input.row-checkbox')
+		d3.select('#geneExpressionGraph #cb-violin')
+			.on('change', function(){
+				self.plotViolins(this.checked);
+			});
+		d3.select('#geneExpressionGraph #cb-jitter')
+			.on('change', function(){
+				self.setPointPositions(this.checked);
+				self.plotPoints();
+			});
+		d3.selectAll('#geneExpressionGraph #dataPoints-div input.row-checkbox')
 			.on('change', function(){ 
 				self._bins = self.initHistogramBins();
-				self.plotViolins(d3.select('#cb-violin').property('checked'));
+				self.plotViolins(d3.select('#geneExpressionGraph #cb-violin').property('checked'));
 				self.plotPoints(); 
 			});
 
-		d3.select('div#dataset-hbi label')
+		d3.select('#geneExpresssionGraph #dataset-hbi label')
 			.on('click', function(){
 				self._navigate('report', {
 					type: 'DataSet',
@@ -343,11 +354,11 @@ export class GeneExpressionGraph{
 		this._xLabels = newLabels;
 		this._xLevels = newLevels;
 		this._xAxis = this.initXAxis();
-		this.setPointPositions(d3.select('#cb-jitter').property('checked'));
+		this.setPointPositions(d3.select('#geneExpressionGraph #cb-jitter').property('checked'));
 		this._bins = this.initHistogramBins();
 		this.plotXAxis();
 		this.plotPoints();
-		this.plotViolins(d3.select('#cb-violin').property('checked'));
+		this.plotViolins(d3.select('#geneExpressionGraph #cb-violin').property('checked'));
 		return true;	
 	}
 
@@ -375,21 +386,21 @@ export class GeneExpressionGraph{
 
 		/* redefine the x Axis with the new list of labels */
 		this._xAxis = this.initXAxis();
-		this.setPointPositions(d3.select('#cb-jitter').property('checked'));
+		this.setPointPositions(d3.select('#geneExpressionGraph #cb-jitter').property('checked'));
 		this._bins = this.initHistogramBins();
 		/* re-plot the graph */
 		this.plotXAxis();
 		this.plotPoints();
-		this.plotViolins(d3.select('#cb-violin').property('checked'));
+		this.plotViolins(d3.select('#geneExpressionGraph #cb-violin').property('checked'));
 		return true;
 	}
 
 	/**
-	 * 
+	 * Display points to represent Gene Expression values
 	 */
 	plotPoints(){
 		let choices = [];
-		d3.selectAll('div#dataPoints-table input.row-checkbox')
+		d3.selectAll('#geneExpressionGraph #dataPoints-div input.row-checkbox')
 			.each(function(){
 				let cb = d3.select(this);
 				if(cb.property('checked'))
@@ -397,7 +408,7 @@ export class GeneExpressionGraph{
 			});
 		let data = this._points.filter(p => choices.includes(p.call));
 		
-		d3.select('svg#canvas_geneExpression g#points').selectAll('circle')
+		d3.select('#geneExpressionGraph g#points').selectAll('circle')
 			.data(data)
 			.join('circle')
 				.attr('cx', d => d.x)
@@ -413,11 +424,13 @@ export class GeneExpressionGraph{
 	}
 
 	/**
-	 *
+	 * Add violin plots next to points in the graph
+	 * 
+	 * @param {boolean} display whether the violins should be displayed or not
 	 */
 	plotViolins(display=true){
 		// remove previous display
-		d3.select('svg#canvas_geneExpression g#violins').selectAll('g').remove();
+		d3.select('#geneExpressionGraph g#violins').selectAll('g').remove();
 		
 		if (!display)	return;
 			
@@ -435,7 +448,7 @@ export class GeneExpressionGraph{
 			.range([0, X.bandwidth()])
 			.domain([-maxNum, maxNum]);
 	
-		d3.select('svg#canvas_geneExpression g#violins').selectAll('g')
+		d3.select('#geneExpressionGraph g#violins').selectAll('g')
 			.data(this._bins)
 			.join('g') // So now we are working group per group
 				.attr('class', 'violin')
@@ -456,22 +469,22 @@ export class GeneExpressionGraph{
 	 */
 	plotXAxis(){
 		// remove previous axis components
-		d3.select('svg#canvas_geneExpression #bottom-axis').remove();
+		d3.select('#geneExpressionGraph #bottom-axis').remove();
 
 		// add the axis to the display
-		d3.select('svg#canvas_geneExpression > g#graph')
+		d3.select('#geneExpressionGraph g#graph')
 			.append('g')
 			.attr('id', 'bottom-axis')
 			.attr('transform', 'translate('+this._margin.left+', '+(this._height-this._margin.bottom)+')')
 			.call(this._xAxis);
 
 		// assign an id to all text used for ticks in the axis 
-		d3.selectAll('svg#canvas_geneExpression g#bottom-axis > g.tick')
+		d3.selectAll('#geneExpressionGraph g#bottom-axis > g.tick')
 			.attr('id', d => d);
 
 		// change the text for the display value associated to it 
 		this._xLabels.forEach((item,i) => {
-			d3.select('svg#canvas_geneExpression g.tick#'+item+'>text')
+			d3.select('#geneExpressionGraph g.tick#'+item+' text')
 				.text('')
 				.selectAll('tspan')
 					.data(this._displayTree.get(this._levels[this._xLevels[i]]).get(item).display)
@@ -484,7 +497,7 @@ export class GeneExpressionGraph{
 
 		/* assign click function to axis labels if required */
 		let self = this;
-		d3.selectAll('svg#canvas_geneExpression g#bottom-axis > g.tick')
+		d3.selectAll('#geneExpressionGraph g#bottom-axis g.tick')
 			.on('click', (ev,d) => self.expandXLabels(d) )
 			.on('contextmenu', (ev,d) => {
 				ev.preventDefault();
@@ -511,22 +524,21 @@ export class GeneExpressionGraph{
 	 */
 	plotYAxis(){
 		// remove previous components 
-		d3.select('svg#canvas_geneExpression #left-axis').remove();
+		d3.select('#geneExpressionGraph #left-axis').remove();
 		
 		// add the axis to the display
-		d3.select('svg#canvas_geneExpression > g#graph')
+		d3.select('#geneExpressionGraph > g#graph')
 			.append('g')
 			.attr('id', 'left-axis')
 			.attr('transform', 'translate('+this._margin.left+',0)')
 			.call(this._yAxis);
 
 		/* if defined, add a title to the axis */
-		d3.select('svg#canvas_geneExpression #left-axis-label')
+		d3.select('#geneExpressionGraph #left-axis-label')
 			.attr('y', 0)
 			.attr('x', -this._height/2)
 			.attr('dy', '1em')
 			.style('text-anchor', 'middle');
-		
 	}
 
 	/**

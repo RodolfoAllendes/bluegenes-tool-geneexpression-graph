@@ -48,7 +48,8 @@ function main(el, service, imEntity, state, config, navigate) {
 	// create the top-level container for the graph
 	el.innerHTML = `
 		<div class="rootContainer">
-			<div id="geneExpressionGraph-div" class="targetmineGraphDisplayer" >
+			<div id="geneExpressionGraph" class="targetmineGraphDisplayer" >
+				
 				<svg id="canvas_geneExpression" class="targetmineGraphSVG">
 					<g id="graph">
 						<text id="left-axis-label" transform="rotate(-90)">
@@ -58,46 +59,51 @@ function main(el, service, imEntity, state, config, navigate) {
 						<g id="violins"></g>
 					</g>
 				</svg>
+				
 				<div id="rightColumn_bioActivity" class="rightColumn">
-					<div id="dataPoints-div class="flex-table">
-						<label>Displayed Values</label>
-						<div id="dataPoints-table">
-							<div id="visuals-violin" class="flex-row">
-								<input type="checkbox" class="row-checkbox" id="cb-present" value="P" checked></input>
-								<label class="row-label">Present (P)</label>
-							</div>
-							<div id="visuals-violin" class="flex-row">
-								<input type="checkbox" class="row-checkbox" id="cb-marginal" value="M" checked></input>
-								<label class="row-label">Marginal(M)</label>
-							</div>
-							<div id="visuals-violin" class="flex-row" disabled>
-								<input type="checkbox" class="row-checkbox" id="cb-absent" value="A" ></input>
-								<label class="row-label">Absent (A)</label>
-							</div>
+					
+					<div id="dataPoints-div" class="flex-table">
+						<h5 class="report-item-heading">Displayed Values</h5>
+						<div id="points-present" class="flex-row">
+							<input id="cb-present" type="checkbox" class="row-checkbox" value="P" checked></input>
+							<label class="row-label">Present (P)</label>
+						</div>
+						<div id="points-marginal" class="flex-row">
+							<input id="cb-marginal" type="checkbox" class="row-checkbox" value="M" checked></input>
+							<label class="row-label">Marginal(M)</label>
+						</div>
+						<div id="points-absent" class="flex-row">
+							<input id="cb-absent" type="checkbox" class="row-checkbox" value="A" ></input>
+							<label class="row-label">Absent (A)</label>
 						</div>
 					</div>
+					
 					<div id="visuals-div" class="flex-table">
-						<label>Other Visuals</label>
-						<div id="visuals-table">
-							<div id="visuals-violin" class="flex-row">
-								<input type="checkbox" id="cb-violin"></input>
-								<label class="row-label">Violin plot</label>
-							</div>
-							<div id="visuals-jitter" class="flex-row">
-								<input type="checkbox" id="cb-jitter"></input>
-								<label class="row-label">Jitter</label>
-							</div>
+						<h5 class="report-item-heading">Add visual aids</h5>
+						<div id="visuals-violin" class="flex-row">
+							<input type="checkbox" id="cb-violin"></input>
+							<label class="row-label">Violin plot</label>
+						</div>
+						<div id="visuals-jitter" class="flex-row">
+							<input type="checkbox" id="cb-jitter"></input>
+							<label class="row-label">Jitter</label>
 						</div>
 					</div>
+					
 					<div id="links-div" class="flex-table">
-						<label>Dataset</label>
-						<div id="dataset-table">
-							<div id="dataset-hbi" class="flex-row">
-								<label class="row-label link">HBI Dataset</label>
-							</div>
+						<h5 class="report-item-heading">Dataset</h5>
+						<div id="dataset-hbi" class="flex-row">
+							<label class="row-label link">HBI Dataset</label>
 						</div>
 					</div>
+
+					<button id="exportButton" class="btn btn-default btn-raised flex-button">
+						<i class="fa fa-download"></i>
+						Export
+					</button>
+
 				</div>
+				
 			</div>
 		</div>
 	`;
