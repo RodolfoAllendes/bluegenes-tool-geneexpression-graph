@@ -477,6 +477,7 @@ export class GeneExpressionGraph{
 					.data(this._displayTree.get(this._levels[this._xLevels[i]]).get(item).display)
 					.join('tspan')
 						.text(d => d)
+						.classed('link',true)
 						.attr('dy', '1em')
 						.attr('x', '0');
 		},this);
@@ -488,7 +489,21 @@ export class GeneExpressionGraph{
 			.on('contextmenu', (ev,d) => {
 				ev.preventDefault();
 				self.collapseXLabels(d);
-			});
+			})
+			.append('svg:title')
+				.text(d => {
+					let i = self._xLevels[self._xLabels.indexOf(d)];
+					switch(i){
+					case 0: 
+						return 'Click to expand';
+					case 1:
+						return 'Click to expand\nRight-click to contract';
+					case 2:
+						return 'Right-click to contract';
+					}
+				})
+		;
+			
 	}
 
 	/**
