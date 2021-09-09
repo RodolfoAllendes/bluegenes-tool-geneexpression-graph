@@ -4,7 +4,7 @@
   }
 
 	/* Overall CSS for the entire Graph Area */
-	div.targetmineGraphDisplayer{
+	.targetMineGeneExpressionGraph{
 		display: flex;
 		flex-direction: row;
 		width: 100%;
@@ -13,28 +13,28 @@
 	}
 
 	/* Definitions for the SVG (left) area of the graph */
-	svg.targetmineGraphSVG{
+	.targetMineGeneExpressionGraphSVG{
 		flex-grow: 1;
 		width: 100%;
 		height: inherit;
 	}
 	
 	/* Definitions for the Controls (right) area of the graph */
-	div.rightColumn{
+	.rightColumn{
 		display: flex;
 		flex-direction: column;
 		width: 20%;
 		background-color: #f9f9f9;
 		justify-content: space-evenly;
 	}
-	div.flex-table{
+	.flex-table{
 		display: flex;
 		box-sizing: border-box;
 		flex-direction: column;
 		flex-wrap: nowrap;
 		justify-content: flex-start;
 	}
-	div.flex-row{
+	.flex-row{
 		display: flex;
 		flex-direction: row;
 		flex-wrap: nowrap;
@@ -44,22 +44,27 @@
 		justify-content: left;
 		width: 80%;
 	}
-	label.link{
-		cursor: pointer;
-		color: blue;
-		text-decoration: underline;
-	}
-	tspan.link{
-		cursor: pointer;
-	}
-	button.flex-button{
+	.row-button{
 		width: 50%;
 		min-width: 50px;
 		max-width: 100px;
 		align-self: center;
 	}
-	path.violin{
+	.html-link{
+		cursor: pointer;
+		color: blue;
+		text-decoration: underline;
+	}
+	.clear-link{
+		cursor: pointer;
+	}
+	.violin{
 		stroke: none;
 		fill: #C0C0C0;
 	}	
+
+	/* Definitions for the Modal area of the graph */
+	.im-modal{
+		display:none;
+	}
 }

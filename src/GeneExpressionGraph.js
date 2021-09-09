@@ -3,6 +3,7 @@
  * Violin and jitter display based on the code from:
  * https://www.d3-graph-gallery.com/graph/violin_jitter.html
  */
+import { saveAs } from 'file-saver';
 const d3 = require('d3');
 
 /**
@@ -114,6 +115,94 @@ export class GeneExpressionGraph{
 			they are on different branches, thus always false.
 			Same applies for all other cases. */
 		return false;
+	}
+
+	/**
+	 * Export the current graph to an image 
+	 */
+	exportGraph(){
+		let self = this;
+		let filetype = d3.select('#geneExpressionGraph #fileType').property('value');
+		let graph = d3.select('#geneExpressionGraph #canvas_geneExpression');
+		if(filetype === 'PNG'){
+			graph.attr('xlink', 'http://www.w3.org/1999/xlink');
+		}
+		else{
+			graph.attr('title', 'TargetMine Gene Expression Graph');
+			graph.attr('version', 1.0);
+			graph.attr('xmlns', 'http://www.w3.org/2000/svg');
+		}
+
+		graph.attr('width', this._width);
+		graph.attr('height', this._height);
+		graph.insert('style', ':first-child')
+			.attr('type', 'text/css')
+			.html(this.getCSSStyles());
+
+		let serializer = new XMLSerializer();
+		let svgString = serializer.serializeToString(graph.node());
+		svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+		svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+		
+
+		if(filetype === 'PNG'){
+			let imgsrc = 'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svgString))); // Convert SVG string to data URL
+			let canvas = d3.create('canvas')
+				.attr('width', 2*this._width)
+				.attr('height', 2*this._height)
+				.style('display', 'none');
+
+			let context = canvas.node().getContext('2d');			 
+			let image = new Image();
+			
+			image.onload = function() {
+				context.fillStyle='#FFFFFF';
+				context.fillRect(0, 0, 2*self._width, 2*self._height);
+				context.drawImage(image, 0, 0, 2*self._width, 2*self._height);
+				canvas.node().toBlob(blob => saveAs(blob, 'graph.png'), 'image/png');
+			};
+			image.src = imgsrc;
+		}
+		else{
+			let blob = new Blob([svgString], {type: 'image/svg+xml'});
+			saveAs(blob, 'graph.svg');
+		}
+	}
+
+	/**
+	 * 
+	 * @param {*} node The parent node for CSS style rule extraction
+	 * @returns the extracted CSS text
+	 */
+	getCSSStyles(){
+		let selectorTextArr = new Set();
+		// add to selectors the classes of the root and its children
+		d3.select('#geneExpressionGraph #canvas_geneExpression')
+			.call((sel) => {
+				sel.node().classList.forEach(c => selectorTextArr.add('.bluegenesToolGeneExpressionGraph .'+c));
+				sel.selectAll('*')
+					.each(function(){
+						this.classList.forEach(c => selectorTextArr.add('.bluegenesToolGeneExpressionGraph .'+c));
+					});
+			});
+		
+		// extract the CSS rules
+		let extractedCSSText = '';
+		for(let i=0; i<document.styleSheets.length; ++i){
+			let s = document.styleSheets[i];
+			try{
+				if(!s.cssRules) continue;
+			}catch(e){
+				if(e.name !== 'SecurityError') throw e;
+				continue;
+			}
+			let cssRules = s.cssRules;
+			for(let j=0; j<cssRules.length; ++j){
+				if(selectorTextArr.has(cssRules[j].selectorText))
+					extractedCSSText += cssRules[j].cssText;
+			}
+		}
+		return extractedCSSText;
 	}
 
 	/**
@@ -285,7 +374,6 @@ export class GeneExpressionGraph{
 	 */
 	initFunctions(){
 		let self = this;
-		/* Event handlers association */
 		d3.select('#geneExpressionGraph #cb-violin')
 			.on('change', function(){
 				self.plotViolins(this.checked);
@@ -301,13 +389,22 @@ export class GeneExpressionGraph{
 				self.plotViolins(d3.select('#geneExpressionGraph #cb-violin').property('checked'));
 				self.plotPoints(); 
 			});
-
 		d3.select('#geneExpresssionGraph #dataset-hbi label')
 			.on('click', function(){
 				self._navigate('report', {
 					type: 'DataSet',
 					id: 133000002 // only valid for brak
 				});
+			});
+		d3.select('#geneExpressionGraph button#exportButton')
+			.on('click', function(){
+				d3.select('#geneExpressionGraph div.im-modal')
+					.style('display', 'flex');
+			});
+		d3.select('#geneExpressionGraph div.im-modal a.close')
+			.on('click', function(){
+				d3.select('#geneExpressionGraph div.im-modal')
+					.style('display', 'none');
 			});
 	}
 

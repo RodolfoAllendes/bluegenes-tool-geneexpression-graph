@@ -48,9 +48,9 @@ function main(el, service, imEntity, state, config, navigate) {
 	// create the top-level container for the graph
 	el.innerHTML = `
 		<div class="rootContainer">
-			<div id="geneExpressionGraph" class="targetmineGraphDisplayer" >
+			<div id="geneExpressionGraph" class="targetMineGeneExpressionGraph" >
 				
-				<svg id="canvas_geneExpression" class="targetmineGraphSVG">
+				<svg id="canvas_geneExpression" class="targetMineGeneExpressionGraphSVG">
 					<g id="graph">
 						<text id="left-axis-label" transform="rotate(-90)">
 							Human Body Index Gene Exp. Level
@@ -97,13 +97,42 @@ function main(el, service, imEntity, state, config, navigate) {
 						</div>
 					</div>
 
-					<button id="exportButton" class="btn btn-default btn-raised flex-button">
+					<button id="exportButton" class="btn btn-default btn-raised row-button">
 						<i class="fa fa-download"></i>
 						Export
 					</button>
 
 				</div>
-				
+
+				<div class="im-modal">
+					<div class="im-modal-content">
+						<div class="modal-dialog">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h4>Export the Gene Expression Graph as...
+										<a class="close">X</a>
+									</h4>
+								</div>
+								<div class="modal-body">
+									<div class="modal-body exporttable-body">
+										<form>
+											<label>Select image format
+												<select id="fileType" class="form-control">
+													<option>PNG</option>
+													<option>SVG</option>
+												</select>
+											</label>
+										</form>
+									</div>
+								</div>
+								<div class="modal-footer">
+									<a class="btn btn-raised btn-primary" onclick="window.GeneExpressionGraph.exportGraph()">Download now!</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				<div>
+
 			</div>
 		</div>
 	`;
