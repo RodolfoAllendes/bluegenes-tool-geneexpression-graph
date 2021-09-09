@@ -93,7 +93,7 @@ function main(el, service, imEntity, state, config, navigate) {
 					<div id="links-div" class="flex-table">
 						<h5 class="report-item-heading">Dataset</h5>
 						<div id="dataset-hbi" class="flex-row">
-							<label class="row-label link">HBI Dataset</label>
+							<label class="row-label html-link">HBI Dataset</label>
 						</div>
 					</div>
 

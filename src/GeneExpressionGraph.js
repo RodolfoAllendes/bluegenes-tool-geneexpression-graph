@@ -587,7 +587,7 @@ export class GeneExpressionGraph{
 					.data(this._displayTree.get(this._levels[this._xLevels[i]]).get(item).display)
 					.join('tspan')
 						.text(d => d)
-						.classed('link',true)
+						.classed('clear-link',true)
 						.attr('dy', '1em')
 						.attr('x', '0');
 		},this);
