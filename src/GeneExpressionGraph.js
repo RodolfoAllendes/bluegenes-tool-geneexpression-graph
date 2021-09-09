@@ -624,7 +624,7 @@ export class GeneExpressionGraph{
 		d3.select('#geneExpressionGraph #left-axis').remove();
 		
 		// add the axis to the display
-		d3.select('#geneExpressionGraph > g#graph')
+		d3.select('#geneExpressionGraph g#graph')
 			.append('g')
 			.attr('id', 'left-axis')
 			.attr('transform', 'translate('+this._margin.left+',0)')
